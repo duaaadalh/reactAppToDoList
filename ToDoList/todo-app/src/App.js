@@ -19,7 +19,7 @@ function App() {
   const [isRegisterScreen, setIsRegisterScreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get the backend URL from the environment variable
+  // Backend API URL for React frontend
   const apiUrl = process.env.REACT_APP_API_URL || 'https://todolist-backend-her.herokuapp.com';
 
   const validateToken = useCallback(() => {
