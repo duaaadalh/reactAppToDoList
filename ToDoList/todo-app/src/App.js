@@ -20,7 +20,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Get the backend URL from the environment variable
-  const apiUrl = process.env.REACT_APP_API_URL || 'https://backend-todolist.herokuapp.com';
+  const apiUrl = process.env.REACT_APP_API_URL || 'https://todolist-backend-her.herokuapp.com';
 
   const validateToken = useCallback(() => {
     if (!token) return false;
