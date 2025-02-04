@@ -3,7 +3,7 @@ import './App.css';
 import { AiOutlineDelete } from 'react-icons/ai';
 import { BsCheckLg } from 'react-icons/bs';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode'; // Importer jwt-decode
+import { jwtDecode } from 'jwt-decode';
 
 function App() {
   const [isCompleteScreen, setIsCompleteScreen] = useState(false);
@@ -15,105 +15,53 @@ function App() {
   const [selectedList, setSelectedList] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [isRegisterScreen, setIsRegisterScreen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // For å håndtere loading-tilstand
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleAddTodo = async () => {
-    if (!selectedList) {
-      alert('Please select a list first.');
-      return;
-    }
-
-    const newTodoItem = {
-      title: newTitle,
-      description: newDescription,
-      list_id: selectedList.list_id,
-      due_time: new Date().toISOString(),
-    };
+  // Flytt validateToken inn i useCallback
+  const validateToken = useCallback(() => {
+    if (!token) return false;
 
     try {
-      const response = await axios.post('http://localhost:3001/todos', newTodoItem, {
-        headers: { Authorization: `Bearer ${token}` },  // Bruk tokenet fra localStorage
-      });
-      const savedTodo = response.data;
-      setTodos([...allTodos, savedTodo]);
-      setNewTitle('');
-      setNewDescription('');
-    } catch (error) {
-      console.error('Error adding todo:', error);
+      const decodedToken = jwtDecode(token);
+      const currentTime = Date.now() / 1000;
+
+      if (decodedToken.exp < currentTime) {
+        localStorage.removeItem('token');
+        setToken(null);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      localStorage.removeItem('token');
+      setToken(null);
+      return false;
     }
-  };
+  }, [token]); // Legg til token som avhengighet
 
-  const handleDeleteFromCompleted = async (index) => {
-    const todoToDelete = completedTodos[index];
-    if (!todoToDelete || !todoToDelete.item_id) {
-      console.error('Error: item_id missing in todoToDelete:', todoToDelete);
-      return;
-    }
-
-    try {
-      await axios.delete(`http://localhost:3001/todos/${todoToDelete.item_id}`, {
-        headers: { Authorization: `Bearer ${token}` },  // Bruk tokenet fra localStorage
-      });
-      const updatedCompletedTodos = completedTodos.filter((_, i) => i !== index);
-      setCompletedTodos(updatedCompletedTodos);
-    } catch (error) {
-      console.error('Error deleting todo:', error);
-    }
-  };
-
-  const handleComplete = async (index) => {
-    const todoToComplete = allTodos[index];
-    try {
-      const response = await axios.put(
-        `http://localhost:3001/todos/${todoToComplete.item_id}/complete`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }  // Bruk tokenet fra localStorage
-      );
-
-      const updatedTodos = allTodos.filter((_, i) => i !== index);
-      setTodos(updatedTodos);
-      setCompletedTodos([...completedTodos, response.data]);
-    } catch (error) {
-      console.error('Error completing todo:', error);
-    }
-  };
-
+  // Flytt fetchLists før den brukes i useEffect
   const fetchLists = useCallback(async () => {
-    setIsLoading(true);  // Start loading
+    if (!validateToken()) return;
+    setIsLoading(true);
     try {
       const response = await axios.get('http://localhost:3001/lists', {
-        headers: { Authorization: `Bearer ${token}` },  // Bruk tokenet fra localStorage
+        headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('Lists fetched from backend:', response.data); // Debugging
       setAllLists(response.data);
-      if (response.data.length > 0) {
-        setSelectedList(response.data[0]); // Velg første liste som standard
-      } else {
-        setSelectedList(null);
-        alert('No lists found. Please create a new list.');
-      }
+      setSelectedList(response.data.length > 0 ? response.data[0] : null);
     } catch (error) {
       console.error('Error fetching lists:', error);
     } finally {
-      setIsLoading(false); // Stop loading
+      setIsLoading(false);
     }
-  }, [token]);
+  }, [token, validateToken]); // Legg til token og validateToken som avhengigheter
 
-  const fetchTodos = useCallback(async () => {
-    if (!selectedList) return;
-    try {
-      const response = await axios.get('http://localhost:3001/todos', {
-        headers: { Authorization: `Bearer ${token}` },  // Bruk tokenet fra localStorage
-        params: { list_id: selectedList.list_id },
-      });
-      setTodos(response.data.filter((todo) => !todo.completed));
-      setCompletedTodos(response.data.filter((todo) => todo.completed));
-    } catch (error) {
-      console.error('Error fetching todos:', error);
+  useEffect(() => {
+    if (token) {
+      fetchLists();
     }
-  }, [selectedList, token]);
+  }, [token, fetchLists]); // Legg til fetchLists som avhengighet
 
   const handleLogin = async () => {
     try {
@@ -121,27 +69,11 @@ function App() {
         email: username,
         password,
       });
-      console.log('Token:', response.data.token); // Debugging
-
       const token = response.data.token;
-
-      // Dekode JWT-tokenet for å sjekke utløpstid
-      const decodedToken = jwtDecode(token);
-      const currentTime = Date.now() / 1000; // Nåværende tid i sekunder
-
-      // Sjekk om tokenet har utløpt
-      if (decodedToken.exp < currentTime) {
-        alert('Token has expired');
-        return; // Avslutt login prosessen hvis tokenet er utløpt
-      }
-
-      // Lagre tokenet i localStorage
       localStorage.setItem('token', token);
-      setToken(token);  // Sett token i frontend state
-
+      setToken(token);
       alert('Login successful!');
     } catch (error) {
-      console.error('Error logging in:', error);
       alert('Login failed. Please check your email and password.');
     }
   };
@@ -155,22 +87,51 @@ function App() {
       alert('Registration successful. Please log in.');
       setIsRegisterScreen(false);
     } catch (error) {
-      console.error('Error registering:', error);
       alert('Registration failed. Please try again.');
     }
   };
 
-  useEffect(() => {
-    if (token) {
-      fetchLists();
+  const handleAddTodo = async () => {
+    if (!newTitle || !newDescription || !selectedList) return; // Check if title, description, and list are provided
+    try {
+      const newTodo = { title: newTitle, description: newDescription, list_id: selectedList.list_id };
+      const response = await axios.post('http://localhost:3001/todos', newTodo, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTodos([...allTodos, response.data]);
+      setNewTitle('');
+      setNewDescription('');
+    } catch (error) {
+      console.error('Error adding todo:', error);
     }
-  }, [token, fetchLists]);
+  };
 
-  useEffect(() => {
-    if (selectedList) {
-      fetchTodos();
+  const handleComplete = async (index) => {
+    const todo = allTodos[index];
+    try {
+      await axios.patch(
+        `http://localhost:3001/todos/${todo.item_id}`,
+        { completed: true },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setTodos(allTodos.filter((item, idx) => idx !== index));
+      setCompletedTodos([...completedTodos, { ...todo, completed: true }]);
+    } catch (error) {
+      console.error('Error completing todo:', error);
     }
-  }, [selectedList, fetchTodos]);
+  };
+
+  const handleDeleteFromCompleted = async (index) => {
+    const todo = completedTodos[index];
+    try {
+      await axios.delete(`http://localhost:3001/todos/${todo.item_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCompletedTodos(completedTodos.filter((item, idx) => idx !== index));
+    } catch (error) {
+      console.error('Error deleting completed todo:', error);
+    }
+  };
 
   return (
     <div className="App">
@@ -192,13 +153,9 @@ function App() {
             onChange={(e) => setPassword(e.target.value)}
           />
           {isRegisterScreen ? (
-            <button onClick={handleRegister} className="primaryBtn">
-              Register
-            </button>
+            <button onClick={handleRegister} className="primaryBtn">Register</button>
           ) : (
-            <button onClick={handleLogin} className="primaryBtn">
-              Login
-            </button>
+            <button onClick={handleLogin} className="primaryBtn">Login</button>
           )}
           <button onClick={() => setIsRegisterScreen(!isRegisterScreen)} className="secondaryBtn">
             {isRegisterScreen ? 'Go to Login' : 'Go to Register'}
