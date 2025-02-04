@@ -19,7 +19,9 @@ function App() {
   const [isRegisterScreen, setIsRegisterScreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Flytt validateToken inn i useCallback
+  // Get the backend URL from the environment variable
+  const apiUrl = process.env.REACT_APP_API_URL || 'https://backend-todolist.herokuapp.com';
+
   const validateToken = useCallback(() => {
     if (!token) return false;
 
@@ -38,14 +40,13 @@ function App() {
       setToken(null);
       return false;
     }
-  }, [token]); // Legg til token som avhengighet
+  }, [token]);
 
-  // Flytt fetchLists før den brukes i useEffect
   const fetchLists = useCallback(async () => {
     if (!validateToken()) return;
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:3001/lists', {
+      const response = await axios.get(`${apiUrl}/lists`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAllLists(response.data);
@@ -55,17 +56,17 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [token, validateToken]); // Legg til token og validateToken som avhengigheter
+  }, [token, validateToken, apiUrl]);
 
   useEffect(() => {
     if (token) {
       fetchLists();
     }
-  }, [token, fetchLists]); // Legg til fetchLists som avhengighet
+  }, [token, fetchLists]);
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://localhost:3001/users/login', {
+      const response = await axios.post(`${apiUrl}/users/login`, {
         email: username,
         password,
       });
@@ -80,7 +81,7 @@ function App() {
 
   const handleRegister = async () => {
     try {
-      await axios.post('http://localhost:3001/users/register', {
+      await axios.post(`${apiUrl}/users/register`, {
         email: username,
         password,
       });
@@ -92,10 +93,10 @@ function App() {
   };
 
   const handleAddTodo = async () => {
-    if (!newTitle || !newDescription || !selectedList) return; // Check if title, description, and list are provided
+    if (!newTitle || !newDescription || !selectedList) return;
     try {
       const newTodo = { title: newTitle, description: newDescription, list_id: selectedList.list_id };
-      const response = await axios.post('http://localhost:3001/todos', newTodo, {
+      const response = await axios.post(`${apiUrl}/todos`, newTodo, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTodos([...allTodos, response.data]);
@@ -110,7 +111,7 @@ function App() {
     const todo = allTodos[index];
     try {
       await axios.patch(
-        `http://localhost:3001/todos/${todo.item_id}`,
+        `${apiUrl}/todos/${todo.item_id}`,
         { completed: true },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -124,7 +125,7 @@ function App() {
   const handleDeleteFromCompleted = async (index) => {
     const todo = completedTodos[index];
     try {
-      await axios.delete(`http://localhost:3001/todos/${todo.item_id}`, {
+      await axios.delete(`${apiUrl}/todos/${todo.item_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCompletedTodos(completedTodos.filter((item, idx) => idx !== index));
