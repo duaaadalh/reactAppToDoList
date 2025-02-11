@@ -3,7 +3,7 @@ import './App.css';
 import { AiOutlineDelete } from 'react-icons/ai';
 import { BsCheckLg } from 'react-icons/bs';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';  // Riktig import
 
 function App() {
   const [isCompleteScreen, setIsCompleteScreen] = useState(false);
@@ -19,14 +19,13 @@ function App() {
   const [isRegisterScreen, setIsRegisterScreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Backend API URL for React frontend
   const apiUrl = process.env.REACT_APP_API_URL || 'https://todolist-backend-her.herokuapp.com';
 
   const validateToken = useCallback(() => {
     if (!token) return false;
 
     try {
-      const decodedToken = jwtDecode(token);
+      const decodedToken = jwtDecode(token);  // Bruk riktig import
       const currentTime = Date.now() / 1000;
 
       if (decodedToken.exp < currentTime) {
@@ -110,8 +109,8 @@ function App() {
   const handleComplete = async (index) => {
     const todo = allTodos[index];
     try {
-      await axios.patch(
-        `${apiUrl}/todos/${todo.item_id}`,
+      await axios.put(
+        `${apiUrl}/todos/${todo.item_id}/complete`,
         { completed: true },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -137,7 +136,6 @@ function App() {
   return (
     <div className="App">
       <h1>My Todos</h1>
-
       {!token ? (
         <div className="auth">
           <h2>{isRegisterScreen ? 'Register' : 'Login'}</h2>
