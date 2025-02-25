@@ -74,7 +74,8 @@ function App() {
       setToken(token);
       alert('Login successful!');
     } catch (error) {
-      alert('Login failed. Please check your email and password.');
+      console.error('Login error:', error);
+      alert(error.response?.data?.message || 'Login failed. Please check your email and password.');
     }
   };
 
@@ -87,18 +88,30 @@ function App() {
       alert('Registration successful. Please log in.');
       setIsRegisterScreen(false);
     } catch (error) {
+      console.error('Registration error:', error);
       alert('Registration failed. Please try again.');
     }
   };
 
   const handleAddTodo = async () => {
-    if (!newTitle || !newDescription || !selectedList) return;
+    if (!newTitle || !newDescription || !selectedList) {
+      alert('Please select a list first');
+      return;
+    }
+
     try {
       const newTodo = { title: newTitle, description: newDescription, list_id: selectedList.list_id };
-      const response = await axios.post(`${apiUrl}/todos`, newTodo, {
+      
+      // Fjerner 'response' som ikke er nødvendig
+      await axios.post(`${apiUrl}/todos`, newTodo, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setTodos([...allTodos, response.data]);
+      
+      // Hent alle todos på nytt etter å ha lagt til en ny
+      const todosResponse = await axios.get(`${apiUrl}/todos?list_id=${selectedList.list_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTodos(todosResponse.data);
       setNewTitle('');
       setNewDescription('');
     } catch (error) {
