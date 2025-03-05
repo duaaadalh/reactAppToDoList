@@ -1,6 +1,6 @@
 [build]
-  publish = "build"
-  command = "npm run build"
+  publish = "todo-app/build"
+  command = "npm run build --prefix todo-app"
 
 [[redirects]]
   from = "/*"
