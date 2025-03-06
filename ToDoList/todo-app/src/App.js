@@ -4,6 +4,7 @@ import { AiOutlineDelete } from 'react-icons/ai';
 import { BsCheckLg } from 'react-icons/bs';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';  // Riktig import
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'; // Import Routes
 
 function App() {
   const [isCompleteScreen, setIsCompleteScreen] = useState(false);
@@ -147,134 +148,140 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <h1>My Todos</h1>
-      {!token ? (
-        <div className="auth">
-          <h2>{isRegisterScreen ? 'Register' : 'Login'}</h2>
-          <input
-            type="text"
-            placeholder="Email"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {isRegisterScreen ? (
-            <button onClick={handleRegister} className="primaryBtn">Register</button>
-          ) : (
-            <button onClick={handleLogin} className="primaryBtn">Login</button>
-          )}
-          <button onClick={() => setIsRegisterScreen(!isRegisterScreen)} className="secondaryBtn">
-            {isRegisterScreen ? 'Go to Login' : 'Go to Register'}
-          </button>
-        </div>
-      ) : (
-        <div className="todo-wrapper">
-          {isLoading ? (
-            <p>Loading lists...</p>
-          ) : (
-            <>
-              <div className="todo-input">
-                <div className="todo-input-item">
-                  <label>Select List:</label>
-                  <select
-                    value={selectedList ? selectedList.list_id : ''}
-                    onChange={(e) =>
-                      setSelectedList(
-                        allLists.find((list) => list.list_id === Number(e.target.value))
-                      )
-                    }
-                  >
-                    <option value="" disabled>
-                      {allLists.length > 0 ? 'Select a list' : 'No lists available'}
-                    </option>
-                    {allLists.map((list) => (
-                      <option key={list.list_id} value={list.list_id}>
-                        {list.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="todo-input">
-                <div className="todo-input-item">
-                  <label>Title</label>
-                  <input
-                    type="text"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="What's the task title?"
-                  />
-                </div>
-                <div className="todo-input-item">
-                  <label>Description</label>
-                  <input
-                    type="text"
-                    value={newDescription}
-                    onChange={(e) => setNewDescription(e.target.value)}
-                    placeholder="What's the description?"
-                  />
-                </div>
-                <button type="button" onClick={handleAddTodo} className="primaryBtn">
-                  Add
+    <Router>  {/* Wrap everything in Router */}
+      <div className="App">
+        <h1>My Todos</h1>
+        <Routes> {/* Use Routes instead of Switch */}
+          <Route path="/" element={
+            !token ? (
+              <div className="auth">
+                <h2>{isRegisterScreen ? 'Register' : 'Login'}</h2>
+                <input
+                  type="text"
+                  placeholder="Email"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                {isRegisterScreen ? (
+                  <button onClick={handleRegister} className="primaryBtn">Register</button>
+                ) : (
+                  <button onClick={handleLogin} className="primaryBtn">Login</button>
+                )}
+                <button onClick={() => setIsRegisterScreen(!isRegisterScreen)} className="secondaryBtn">
+                  {isRegisterScreen ? 'Go to Login' : 'Go to Register'}
                 </button>
               </div>
-              <div className="btn-area">
-                <button
-                  className={`secondaryBtn ${!isCompleteScreen && 'active'}`}
-                  onClick={() => setIsCompleteScreen(false)}
-                >
-                  Todo
-                </button>
-                <button
-                  className={`secondaryBtn ${isCompleteScreen && 'active'}`}
-                  onClick={() => setIsCompleteScreen(true)}
-                >
-                  Completed
-                </button>
-              </div>
-              <div className="todo-list">
-                {!isCompleteScreen &&
-                  allTodos.map((item, index) => (
-                    <div className="todo-list-item" key={item.item_id}>
-                      <div>
-                        <h3>{item.title}</h3>
-                        <p>{item.description}</p>
-                      </div>
-                      <div>
-                        <BsCheckLg className="check-icon" onClick={() => handleComplete(index)} />
+            ) : (
+              <div className="todo-wrapper">
+                {isLoading ? (
+                  <p>Loading lists...</p>
+                ) : (
+                  <>
+                    <div className="todo-input">
+                      <div className="todo-input-item">
+                        <label>Select List:</label>
+                        <select
+                          value={selectedList ? selectedList.list_id : ''}
+                          onChange={(e) =>
+                            setSelectedList(
+                              allLists.find((list) => list.list_id === Number(e.target.value))
+                            )
+                          }
+                        >
+                          <option value="" disabled>
+                            {allLists.length > 0 ? 'Select a list' : 'No lists available'}
+                          </option>
+                          {allLists.map((list) => (
+                            <option key={list.list_id} value={list.list_id}>
+                              {list.name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
-                  ))}
-                {isCompleteScreen &&
-                  completedTodos.map((item, index) => (
-                    <div className="todo-list-item" key={item.item_id}>
-                      <div>
-                        <h3>{item.title}</h3>
-                        <p>{item.description}</p>
-                        <p>
-                          <small>Completed on: {item.completed_time}</small>
-                        </p>
-                      </div>
-                      <div>
-                        <AiOutlineDelete
-                          className="icon"
-                          onClick={() => handleDeleteFromCompleted(index)}
+                    <div className="todo-input">
+                      <div className="todo-input-item">
+                        <label>Title</label>
+                        <input
+                          type="text"
+                          value={newTitle}
+                          onChange={(e) => setNewTitle(e.target.value)}
+                          placeholder="What's the task title?"
                         />
                       </div>
+                      <div className="todo-input-item">
+                        <label>Description</label>
+                        <input
+                          type="text"
+                          value={newDescription}
+                          onChange={(e) => setNewDescription(e.target.value)}
+                          placeholder="What's the description?"
+                        />
+                      </div>
+                      <button type="button" onClick={handleAddTodo} className="primaryBtn">
+                        Add
+                      </button>
                     </div>
-                  ))}
+                    <div className="btn-area">
+                      <button
+                        className={`secondaryBtn ${!isCompleteScreen && 'active'}`}
+                        onClick={() => setIsCompleteScreen(false)}
+                      >
+                        Todo
+                      </button>
+                      <button
+                        className={`secondaryBtn ${isCompleteScreen && 'active'}`}
+                        onClick={() => setIsCompleteScreen(true)}
+                      >
+                        Completed
+                      </button>
+                    </div>
+                    <div className="todo-list">
+                      {!isCompleteScreen &&
+                        allTodos.map((item, index) => (
+                          <div className="todo-list-item" key={item.item_id}>
+                            <div>
+                              <h3>{item.title}</h3>
+                              <p>{item.description}</p>
+                            </div>
+                            <div>
+                              <BsCheckLg className="check-icon" onClick={() => handleComplete(index)} />
+                            </div>
+                          </div>
+                        ))}
+                      {isCompleteScreen &&
+                        completedTodos.map((item, index) => (
+                          <div className="todo-list-item" key={item.item_id}>
+                            <div>
+                              <h3>{item.title}</h3>
+                              <p>{item.description}</p>
+                              <p>
+                                <small>Completed on: {item.completed_time}</small>
+                              </p>
+                            </div>
+                            <div>
+                              <AiOutlineDelete
+                                className="icon"
+                                onClick={() => handleDeleteFromCompleted(index)}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </>
+                )}
               </div>
-            </>
-          )}
-        </div>
-      )}
-    </div>
+            )
+          } />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
