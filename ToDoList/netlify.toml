@@ -2,8 +2,3 @@
   publish = "todo-app/build"
   command = "npm run build --prefix todo-app"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = true
